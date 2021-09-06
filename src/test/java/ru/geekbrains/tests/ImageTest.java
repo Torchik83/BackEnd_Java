@@ -1,171 +1,199 @@
 package ru.geekbrains.tests;
 
-import org.hamcrest.CoreMatchers;
+import dao.ImageResponse;
+import io.restassured.specification.RequestSpecification;
+import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
 import java.io.File;
+import java.io.IOException;
+import java.util.Base64;
+
+import static base.Endpoints.UPLOAD_IMAGE;
+import static base.Images.IMAGE_URL;
 import static io.restassured.RestAssured.given;
 
 public class ImageTest extends BaseTest {
 
-    String imageDeleteHash;
-    String Upload_ID;
+    static final String IMAGE_FILE = "src/test/resources/Screen 1_100kb.jpg";
+    static final String MEDIUM_IMAGE_FILE = "src/test/resources/Screen 2_7Mb.jpg";
+    static final String BIG_IMAGE_FILE = "src/test/resources/Screen 3_11Mb.jpg";
+    static final String BMP_IMAGE_FILE = "src/test/resources/Screen 5_bmp.bmp";
+    static final String TIFF_IMAGE_FILE = "src/test/resources/Screen 6_tiff.tiff";
+    static final String PNG_IMAGE_FILE = "src/test/resources/Screen 7_png.png";
+    static final String PATH_TO_1X1PCL_IMAGE = "src/test/resources/Screen 8_1x1pcl.jpg";
+    static final String NO_IMAGE_FILE = "src/test/resources/Screen 9_no image.html";
+
+    RequestSpecification multiPartReqSpec;
+    String base64Image;
+    RequestSpecification imageRequestSpecification;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        byte[] imageBytesArray = FileUtils.readFileToByteArray(new File(IMAGE_FILE));
+        base64Image = Base64.getEncoder().encodeToString(imageBytesArray);
+    }
 
     @Test
     void uploadImageFileTest() {
-        imageDeleteHash = given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 1_100kb.jpg"))
+          given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(IMAGE_FILE))
                 .expect()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.type", CoreMatchers.is("image/jpeg"))
-                .body("data.width", CoreMatchers.is(1160))
-                .body("data.size", CoreMatchers.not(0))
+                .spec(positiveResponseSpecification)
                 .when()
-                .post("/image")
-                .prettyPeek()
-                .jsonPath()
-                .get("data.deletehash");
-    }
-    @Test
-    void uploadMediumSizeImageFileTest() {
-        imageDeleteHash = given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 2_7Mb.jpg"))
-                .expect()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.type", CoreMatchers.is("image/jpeg"))
-                .body("data.width", CoreMatchers.is(3376))
-                .body("data.size", CoreMatchers.not(0))
-                .when()
-                .post("/image")
-                .prettyPeek()
-                .jsonPath()
-                .get("data.deletehash");
-    }
-    @Test
-    void uploadBigSizeImageFileTest()  {
-        given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 3_11Mb.jpg"))
-                .when()
-                .post("/image")
-                .prettyPeek()
-                .then()
-                .statusCode(400)
-                .body("success", CoreMatchers.is(false))
-                .body("data.error", CoreMatchers.is("File is over the size limit"));
-    }
-    @Test
-    void uploadBmpFileTest() {
-        imageDeleteHash = given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 5_bmp.bmp"))
-                .expect()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.type", CoreMatchers.is("image/bmp"))
-                .body("data.width", CoreMatchers.is(1275))
-                .body("data.size", CoreMatchers.not(0))
-                .when()
-                .post("/image")
-                .prettyPeek()
-                .jsonPath()
-                .get("data.deletehash");
-    }
-    @Test
-    void uploadTiffFileTest() {
-        imageDeleteHash = given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 6_tiff.tiff"))
-                .expect()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.type", CoreMatchers.is("image/tiff"))
-                .body("data.width", CoreMatchers.is(1280))
-                .body("data.size", CoreMatchers.not(0))
-                .when()
-                .post("/image")
-                .prettyPeek()
-                .jsonPath()
-                .get("data.deletehash");
-    }
-    @Test
-    void uploadPngFileTest() {
-        imageDeleteHash = given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 7_png.png"))
-                .expect()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.type", CoreMatchers.is("image/png"))
-                .body("data.width", CoreMatchers.is(1489))
-                .body("data.size", CoreMatchers.not(0))
-                .when()
-                .post("/image")
-                .prettyPeek()
-                .jsonPath()
-                .get("data.deletehash");
-    }
-    @Test
-    void upload1x1pclImageFileTest()  {
-       imageDeleteHash = given()
-               .header("Authorization", token)
-               .body(new File("src/test/resources/Screen 8_1x1pcl.jpg"))
-               .expect()
-               .statusCode(200)
-               .body("success", CoreMatchers.is(true))
-               .body("data.type", CoreMatchers.is("image/jpeg"))
-               .body("data.width", CoreMatchers.is(1))
-               .body("data.size", CoreMatchers.not(0))
-               .when()
-               .post("/image")
-               .prettyPeek()
-               .jsonPath()
-               .get("data.deletehash");
-    }
-    @Test
-    void uploadNoImageFileTest() {
-        given()
-                .header("Authorization", token)
-                .body(new File("src/test/resources/Screen 9_no image.html"))
-                .when()
-                .post("/image")
-                .prettyPeek()
-                .then()
-                .statusCode(400)
-                .body("success", CoreMatchers.is(false));
-    }
-    @Test
-    void uploadUrlImageFileTest() {
-        Upload_ID = given()
-                .header("Authorization", token)
-                .multiPart("image", "https://images.wallpaperscraft.ru/image/doroga_gory_tuman_219202_1024x768.jpg")
-                .params("type","url")
-                .expect()
-                .statusCode(200)
-                .body("success", CoreMatchers.is(true))
-                .body("data.type", CoreMatchers.is("image/jpeg"))
-                .body("data.width", CoreMatchers.is(1024))
-                .body("data.size", CoreMatchers.not(0))
-                .when()
-                .post("/image")
+                .post(UPLOAD_IMAGE)
                 .prettyPeek()
                 .then()
                 .extract()
-                .response()
-                .jsonPath()
-                .getString("data.id");
+                .as(ImageResponse.class);
+
     }
 
-//    @AfterEach
-//   void tearDown() {
-//        given()
-//               .header("Authorization", token)
-//               .when()
-//               .delete("image/{imageHash}", imageDeleteHash)
-//               .then()
-//               .statusCode(200);
-//   }
+    @Test
+    void uploadImageSmallFileTest() {
+         given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(IMAGE_FILE))
+                .expect()
+                .spec(imageSmallUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadImageMediumFileTest() {
+         given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(MEDIUM_IMAGE_FILE))
+                .expect()
+                .spec(imageMediumUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadImageBigFileTest() {
+        given()
+                .spec(imageBigUploadRequestSpecification)
+                .multiPart("image", new File(BIG_IMAGE_FILE))
+                .expect()
+                .spec(imageBigUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadImageBmpFileTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(BMP_IMAGE_FILE))
+                .expect()
+                .spec(imageBmpUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadImageTiffFileTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(TIFF_IMAGE_FILE))
+                .expect()
+                .spec(imageTiffUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadImagePngFileTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(PNG_IMAGE_FILE))
+                .expect()
+                .spec(imagePngUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void upload1x1pclFileTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(PATH_TO_1X1PCL_IMAGE))
+                .expect()
+                .spec(image1x1pclUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadNoImageFileTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", new File(NO_IMAGE_FILE))
+                .expect()
+                .spec(imageNoImageUploadResponseSpecification)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadFileWithLinkTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", IMAGE_URL.getPath())
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
+
+    @Test
+    void uploadBase64FileTest() {
+        given()
+                .spec(requestSpecification)
+                .multiPart("image", base64Image)
+                .when()
+                .post(UPLOAD_IMAGE)
+                .prettyPeek()
+                .then()
+                .extract()
+                .as(ImageResponse.class);
+    }
 }
