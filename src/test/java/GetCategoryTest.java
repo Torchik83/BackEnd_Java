@@ -18,8 +18,6 @@ public class GetCategoryTest {
         categoryService = RetrofitUtils.getRetrofit().create(CategoryService.class);
     }
 
-
-
     @SneakyThrows
     @ParameterizedTest
     @EnumSource(value = NumericField.class, names = {"MAX_INT", "NEGATIVE_NUMBER", "ZERO"})

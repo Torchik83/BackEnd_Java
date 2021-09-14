@@ -1,7 +1,10 @@
-
 import com.github.javafaker.Faker;
+import db.model.Products;
+import db.model.ProductsExample;
 import dto.Product;
-import enums.*;
+import enums.Category;
+import enums.NumericField;
+import enums.TextField;
 import lombok.SneakyThrows;
 import okhttp3.ResponseBody;
 import org.hamcrest.CoreMatchers;
@@ -15,6 +18,7 @@ import retrofit2.Response;
 import java.util.Objects;
 
 import static enums.AssertMethod.positiveCreateAssert;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -27,7 +31,7 @@ public class CreateProductPositiveTest extends BaseTest {
     void setUp(){
         product = new Product()
                 .withTitle(faker.food().ingredient())
-                .withCategoryTitle(Category.FOOD.getTitle())
+                .withCategoryTitle(testCategory.getTitle())
                 .withPrice((int) (Math.random() * 10000));
     }
 
@@ -38,6 +42,10 @@ public class CreateProductPositiveTest extends BaseTest {
         id = Objects.requireNonNull(response.body()).getId();
         assertThat(response.isSuccessful(), CoreMatchers.is(true));
         assertThat(response.body().getTitle(), equalTo(product.getTitle()));
+        ProductsExample example = new ProductsExample();
+        example.createCriteria().andCategory_idEqualTo(Long.valueOf(testCategory.getId()));
+        assertThat(response.body().getTitle(), equalTo(product.getTitle()));
+
     }
 
     @SneakyThrows
@@ -68,6 +76,10 @@ public class CreateProductPositiveTest extends BaseTest {
         id = Objects.requireNonNull(response.body()).getId();
         positiveCreateAssert(response);
         assertThat(response.body().getCategoryTitle(), equalTo(Category.FOOD.getTitle()));
+        ProductsExample example = new ProductsExample();
+        example.createCriteria().andCategory_idEqualTo(Long.valueOf(testCategory.getId())).andTitleEqualTo(null);
+        Products productFromDb = productsMapper.selectByExample(example).get(1);
+        assertThat(productFromDb.getTitle()).isEqualTo(product.getTitle());
     }
 
     @SneakyThrows
@@ -86,6 +98,10 @@ public class CreateProductPositiveTest extends BaseTest {
         assertThat(response.body().getTitle(), equalTo(product.getTitle()));
         assertThat(response.body().getCategoryTitle(), equalTo(Category.FOOD.getTitle()));
         assertThat(response.body().getPrice(), equalTo(numericField.getIntMeaning()));
+        ProductsExample example = new ProductsExample();
+        example.createCriteria().andCategory_idEqualTo(Long.valueOf(testCategory.getId())).andPriceEqualTo(1000);
+        Products productFromDb = productsMapper.selectByExample(example).get(0);
+        assertThat(productFromDb.getPrice()).isEqualTo(product.getPrice());
     }
 
     @SneakyThrows
@@ -100,6 +116,10 @@ public class CreateProductPositiveTest extends BaseTest {
         positiveCreateAssert(response);
         assertThat(response.body().getTitle(), equalTo(product.getTitle()));
         assertThat(response.body().getCategoryTitle(), equalTo(Category.FOOD.getTitle()));
+        ProductsExample example = new ProductsExample();
+        example.createCriteria().andCategory_idEqualTo(Long.valueOf(testCategory.getId())).andPriceEqualTo(null);
+        Products productFromDb = productsMapper.selectByExample(example).get(0);
+        assertThat(productFromDb.getPrice()).isEqualTo(product.getPrice());
     }
 
     @SneakyThrows
